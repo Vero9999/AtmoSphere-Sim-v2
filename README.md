@@ -15,7 +15,7 @@ AtmoSphere Sim predicts the impact on flooding, erosion, water, waste and carbon
 > replace an AMDAL, UKL-UPL, SPPL or any other environmental document. Environmental data is still **dummy**.
 > Results must be reviewed by a qualified environmental expert.
 
-**Live demo:** _coming soon_ · Built at Hacktoberfest Hack Day Kota Batam × Batam Innovation Center 2026
+**Live demo:** [atmosphere-sim-batam.streamlit.app](https://atmosphere-sim-batam.streamlit.app/) · Built at Hacktoberfest Hack Day Kota Batam × Batam Innovation Center 2026
 
 ---
 
