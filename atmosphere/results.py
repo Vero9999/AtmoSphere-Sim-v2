@@ -15,6 +15,7 @@ class ComponentImpact:
     after: float | None = None
     unit: str = ""
     mitigation: list = field(default_factory=list)
+    phase: str = "semua"  # konstruksi / operasional / semua
 
 
 @dataclass
@@ -26,6 +27,7 @@ class AssessmentResult:
     components: list
     regulation: dict
     assumptions: list = field(default_factory=list)
+    timeline: list = field(default_factory=list)  # lihat build_timeline()
 
     @property
     def overall_level(self) -> str:
