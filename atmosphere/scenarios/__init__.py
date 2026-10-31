@@ -1,20 +1,24 @@
 from .base import ComingSoonScenario, Param, Scenario
-from .perumahan import PerumahanScenario
+from .buildings import (
+    HotelScenario,
+    KantorScenario,
+    LainnyaScenario,
+    MalScenario,
+    PerumahanScenario,
+    RukoScenario,
+)
 
 SCENARIOS = {
     s.key: s
     for s in [
         PerumahanScenario(),
-        ComingSoonScenario(
-            "industri",
-            "Pabrik / industri",
-            "Emisi cerobong (Gaussian plume), kebisingan, limbah cair.",
-        ),
-        ComingSoonScenario(
-            "reklamasi",
-            "Pembukaan lahan / reklamasi pesisir",
-            "Hilangnya mangrove, emisi karbon, abrasi, sedimen.",
-        ),
+        RukoScenario(),
+        KantorScenario(),
+        HotelScenario(),
+        MalScenario(),
+        LainnyaScenario(),
+        ComingSoonScenario("industri"),
+        ComingSoonScenario("reklamasi"),
     ]
 }
 

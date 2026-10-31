@@ -102,3 +102,16 @@ IMPACT_THRESHOLDS = {
     "sampah_kg_hari": (100, 1000),
     "emisi_karbon_tco2": (50, 500),
 }
+
+# --- Pemakai bangunan per jenis kegiatan --------------------------------------
+# Air (L/orang/hari) dan sampah (kg/orang/hari). Rumah/ruko: Ditjen Cipta Karya.
+# Kantor, hotel, mal: ASUMSI dari kisaran SNI 03-7065-2005 (perlu verifikasi).
+OCCUPANCY = {
+    "perumahan": {"water_l": 150, "waste_kg": 0.7},
+    "ruko": {"water_l": 150, "waste_kg": 0.7},
+    "kantor": {"water_l": 50, "waste_kg": 0.3},
+    "hotel": {"water_l": 250, "waste_kg": 1.0},
+    "mal": {"water_l": 10, "waste_kg": 0.1},
+    "lainnya": {"water_l": 50, "waste_kg": 0.3},
+}
+HOTEL_GUESTS_PER_ROOM = 2  # ASUMSI

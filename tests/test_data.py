@@ -59,3 +59,4 @@ def test_document_indication(land, floor, site, expected):
     out = indicate_building_document(land, floor, site)
     assert out["dokumen"] == expected
     assert out["alasan"] and out["catatan"]
+    assert indicate_building_document(land, floor, site, "en")["catatan"].startswith("This is")

@@ -29,8 +29,9 @@ def sc():
     return SCENARIOS["perumahan"]
 
 
-def test_registry_has_housing_and_coming_soon():
-    assert SCENARIOS["perumahan"].available
+def test_registry_has_separate_types_and_coming_soon():
+    for key in ["perumahan", "ruko", "kantor", "hotel", "mal", "lainnya"]:
+        assert SCENARIOS[key].available
     assert not SCENARIOS["industri"].available
     assert not SCENARIOS["reklamasi"].available
 
@@ -82,3 +83,37 @@ def test_timeline_accumulates_over_years(sc):
 def test_result_serializes(sc):
     d = sc.run(make_existing(), sc.defaults(2000)).to_dict()
     assert d["timeline"] and d["components"][0]["phase"]
+
+
+def persons_from(result):
+    water = next(c for c in result.components if c.key == "air_bersih")
+    return water.after
+
+
+@pytest.mark.parametrize("key, extra, water_m3", [
+    ("kantor", {"jumlah_karyawan": 300}, 15.0),      # 300 x 50 L
+    ("hotel", {"jumlah_kamar": 100}, 50.0),          # 100 x 2 tamu x 250 L
+    ("mal", {"pengunjung_per_hari": 5000}, 50.0),    # 5000 x 10 L
+    ("lainnya", {"jumlah_orang": 600, "air_l_per_orang": 50, "nama_kegiatan": "Sekolah"}, 30.0),
+])
+def test_building_types_use_their_own_occupancy(key, extra, water_m3):
+    sc = SCENARIOS[key]
+    result = sc.run(make_existing(), sc.defaults(4000) | extra)
+    assert persons_from(result) == pytest.approx(water_m3)
+    assert len(result.components) == 6
+
+
+def test_other_uses_custom_name():
+    sc = SCENARIOS["lainnya"]
+    result = sc.run(make_existing(), sc.defaults(2000) | {"nama_kegiatan": "Sekolah"})
+    assert result.scenario_label.endswith("Sekolah")
+
+
+def test_english_output():
+    sc = SCENARIOS["ruko"]
+    result = sc.run(make_existing(touches_mangrove=True), sc.defaults(4000), lang="en")
+    names = [c.name for c in result.components]
+    assert "Stormwater runoff (flood risk)" in names
+    assert "mangrove" in result.regulation["alasan"][0]
+    assert result.timeline[1]["label"] == "1 year"
+    assert sc.label("en") == "Shophouse (ruko)"
