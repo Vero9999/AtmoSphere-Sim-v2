@@ -17,8 +17,8 @@ from atmosphere import config as C
 from atmosphere import plans as P
 from atmosphere import ui
 from atmosphere.data import ExistingDataStore
-from atmosphere.geo import BATAM_CENTER, area_m2, square_around
-from atmosphere.i18n import LANGS, fmt, t
+from atmosphere.geo import BATAM_CENTER, area_m2, dissolve_cells, reverse_geocode, square_around
+from atmosphere.i18n import LANGS, fmt, parse_number, t
 from atmosphere.llm import GemmaClient
 from atmosphere.scenarios import SCENARIOS
 
@@ -44,25 +44,38 @@ def get_llm():
     return GemmaClient()
 
 
+@st.cache_resource
+def dissolved_layer():
+    return dissolve_cells(get_store().geojson)
+
+
 @st.cache_data
 def map_layer(lang: str) -> dict:
-    """GeoJSON tutupan lahan dengan label sesuai bahasa untuk tooltip peta."""
-    gj = get_store().geojson
-    feats = []
-    for f in gj["features"]:
-        props = dict(f["properties"])
-        props["label"] = t("lc." + props["tutupan_lahan"], lang)
-        props["lindung"] = ("✓" if props.get("kawasan_lindung") else "–")
-        feats.append({"type": "Feature", "geometry": f["geometry"], "properties": props})
+    """Tutupan lahan digabung per jenis (±60 KB, bukan ±500 KB) supaya peta ringan di browser."""
+    feats = [
+        {"type": "Feature", "geometry": d["geometry"],
+         "properties": {"cover": d["cover"], "label": t("lc." + d["cover"], lang),
+                        "lindung": "✓" if d["protected"] else "–"}}
+        for d in dissolved_layer()
+    ]
     return {"type": "FeatureCollection", "features": feats}
 
+
+@st.cache_data(ttl=86400, show_spinner=False)
+def address_of(lat: float, lon: float, lang: str):
+    return reverse_geocode(lat, lon, lang)
+
+
+def center_of(geom: dict) -> tuple:
+    c = shape(geom).centroid
+    return round(c.y, 5), round(c.x, 5)
 
 store, llm = get_store(), get_llm()
 ss = st.session_state
 for key, value in {
     "lang": "id", "area": None, "run": None, "vals": {}, "plans": [], "active_plan": None,
     "explanations": {}, "chats": {}, "photo_result": None, "fill_questions": None, "flash": None,
-    "plan_seq": 1, "scenario_key": "perumahan",
+    "plan_seq": 1, "scenario_key": "perumahan", "edit_map": False, "address": None,
 }.items():
     ss.setdefault(key, value)
 
@@ -82,12 +95,15 @@ def clear_form(keep_area: bool = False):
 def set_area(geom: dict):
     clear_form()
     ss.area = geom
+    ss.edit_map = False
+    ss.address = address_of(*center_of(geom), lang)
     st.rerun()
 
 
 def new_plan():
     clear_form()
     ss.active_plan = None
+    ss.address, ss.edit_map = None, False
     ss.pop("plan_name", None)
 
 
@@ -99,6 +115,7 @@ def open_plan(plan):
     ss.run = {"scenario_key": plan.scenario_key, "params": dict(plan.params), "existing": plan.existing}
     ss.active_plan = plan.id
     ss.plan_name = plan.name
+    ss.address, ss.edit_map = plan.address, False
 
 
 def delete_plan(plan_id):
@@ -156,6 +173,16 @@ with st.sidebar:
 @st.fragment
 def map_section():
     st.html(ui.section(1, t("s1.title", lang), t("s1.sub", lang)))
+    if ss.area and not ss.edit_map:
+        # Lokasi terkunci: peta tidak dimuat ulang, jadi bagian hasil tetap cepat diklik.
+        lat, lon = center_of(ss.area)
+        address = ss.address or address_of(lat, lon, lang) or t("s1.address_unknown", lang)
+        detail = f"{fmt(area_m2(shape(ss.area)), 0, lang)} m² · {lat:.5f}, {lon:.5f}"
+        st.html(ui.location_box(address, detail, t("s1.locked", lang), locked=True))
+        if st.button(t("s1.change", lang), key="change_location"):
+            ss.edit_map = True
+            st.rerun()
+        return
     col_map, col_opt = st.columns([3, 1])
     with col_opt:
         with st.container(border=True):
@@ -176,12 +203,12 @@ def map_section():
             folium.GeoJson(
                 map_layer(lang), name=t("map.cover", lang),
                 style_function=lambda f: {
-                    "fillColor": C.LAND_COVER_COLORS.get(f["properties"]["tutupan_lahan"], "#999"),
+                    "fillColor": C.LAND_COVER_COLORS.get(f["properties"]["cover"], "#999"),
                     "color": "none", "fillOpacity": 0.45,
                 },
                 tooltip=folium.GeoJsonTooltip(
-                    fields=["label", "kemiringan_pct", "lindung"],
-                    aliases=[t("s2.cover", lang), t("map.slope", lang), t("map.protected", lang)],
+                    fields=["label", "lindung"],
+                    aliases=[t("s2.cover", lang), t("map.protected", lang)],
                 ),
             ).add_to(m)
         for plan in ss.plans:
@@ -194,8 +221,8 @@ def map_section():
         if ss.area:
             folium.GeoJson(
                 ss.area, name=t("s1.plan_area", lang), tooltip=t("s1.plan_area", lang),
-                style_function=lambda f: {"color": ui.MAROON, "weight": 4, "fillColor": ui.MUSTARD,
-                                          "fillOpacity": 0.25},
+                style_function=lambda f: {"color": "#FACC15", "weight": 4, "fillColor": "#FACC15",
+                                          "fillOpacity": 0.15},
             ).add_to(m)
         Draw(
             export=False,
@@ -206,11 +233,17 @@ def map_section():
         out = st_folium(m, height=500, use_container_width=True, key="map",
                         returned_objects=["all_drawings", "last_clicked"])
 
-    c1, c2 = st.columns(2)
     drawings = (out or {}).get("all_drawings") or []
+    clicked = (out or {}).get("last_clicked")
+    candidate = (center_of(drawings[-1]["geometry"]) if drawings
+                 else (clicked["lat"], clicked["lng"]) if clicked else None)
+    if candidate:
+        address = address_of(round(candidate[0], 5), round(candidate[1], 5), lang) or t("s1.address_unknown", lang)
+        st.html(ui.location_box(address, f"{candidate[0]:.5f}, {candidate[1]:.5f}", t("s1.candidate", lang),
+                                locked=False))
+    c1, c2 = st.columns(2)
     if c1.button(t("s1.use_drawn", lang), disabled=not drawings, type="primary", use_container_width=True):
         set_area(drawings[-1]["geometry"])
-    clicked = (out or {}).get("last_clicked")
     if c2.button(t("s1.use_point", lang), disabled=not clicked, use_container_width=True):
         set_area(mapping(square_around(clicked["lng"], clicked["lat"], point_area)))
 
@@ -264,13 +297,22 @@ def conditions_section(polygon):
 
 
 # --- 3. Rencana --------------------------------------------------------------------
+def grouped(p) -> bool:
+    """Kolom luas/volume ditampilkan dengan pemisah ribuan (4.000, 1.250.000)."""
+    return p.kind == "float" and p.unit in ("m2", "m3")
+
+
 def widget_value(p, value):
     if p.kind == "bool":
         return bool(value)
     if p.kind == "text":
         return str(value or "")
     low = p.min_value or 0
-    return max(int(round(float(value))), int(low)) if p.kind == "int" else max(float(value), float(low))
+    number = parse_number(value)
+    if grouped(p):
+        number = max(number, float(low))
+        return fmt(number, 0 if number.is_integer() else 1, lang)
+    return max(int(round(number)), int(low)) if p.kind == "int" else max(number, float(low))
 
 
 def plan_section(polygon, existing):
@@ -290,13 +332,19 @@ def plan_section(polygon, existing):
         ss.vals.setdefault(p.key, defaults[p.key])
         ss.setdefault(f"w_{p.key}", widget_value(p, ss.vals[p.key]))
 
-    text = st.text_area(t("s3.text", lang), placeholder=scenario.example_text(lang), height=90, key="plan_text")
+    include = ", ".join(p.label(lang).split(" (")[0].lower() for p in scenario.params if p.kind != "text")
+    text = st.text_area(t("s3.text", lang), placeholder=t("s3.example_prefix", lang) + scenario.example_text(lang),
+                        height=110, key="plan_text")
+    st.caption(t("s3.include", lang, v=include))
+    siteplan = st.file_uploader(t("s3.siteplan", lang), type=["jpg", "jpeg", "png"], key="w_siteplan",
+                                help=t("s3.siteplan_help", lang))
     if st.button(t("s3.fill", lang), type="primary"):
-        if not text.strip():
+        if not text.strip() and not siteplan:
             st.warning(t("s3.need_text", lang))
         else:
+            image = (siteplan.getvalue(), siteplan.type or "image/jpeg") if siteplan else None
             with st.spinner(t("s3.fill_wait", lang)):
-                extracted = llm.extract_params(text, scenario, lang)
+                extracted = llm.extract_params(text, scenario, lang, image=image)
             kind = extracted.pop("jenis_kegiatan", None)
             ss.fill_questions = extracted.pop("pertanyaan", None)
             target = scenario
@@ -327,7 +375,7 @@ def plan_section(polygon, existing):
             label, help_ = p.label(lang), p.help(lang)
             if p.kind == "bool":
                 values[p.key] = col.checkbox(label, key=wkey, help=help_)
-            elif p.kind == "text":
+            elif p.kind == "text" or grouped(p):
                 values[p.key] = col.text_input(label, key=wkey, help=help_)
             elif p.kind == "int":
                 values[p.key] = col.number_input(label, key=wkey, step=1, min_value=int(p.min_value or 0),
@@ -337,6 +385,13 @@ def plan_section(polygon, existing):
                                                  min_value=float(p.min_value or 0), help=help_)
         submitted = st.form_submit_button(t("s3.predict", lang), type="primary")
     if submitted:
+        for p in scenario.params:
+            if grouped(p):
+                try:
+                    values[p.key] = max(parse_number(values[p.key]), float(p.min_value or 0))
+                except ValueError:
+                    st.error(t("s3.bad_number", lang, v=p.label(lang)))
+                    return
         ss.vals.update(values)
         ss.run = {"scenario_key": key, "params": dict(values), "existing": existing}
         st.rerun()
@@ -420,9 +475,11 @@ def results_section():
             if active:
                 active.name, active.scenario_key = name, run["scenario_key"]
                 active.params, active.existing, active.area = dict(run["params"]), run["existing"], ss.area
+                active.address = ss.address or ""
                 ss.save_msg = t("plan.updated", lang, v=name)
             else:
-                plan = P.Plan(name, run["scenario_key"], dict(run["params"]), ss.area, run["existing"])
+                plan = P.Plan(name, run["scenario_key"], dict(run["params"]), ss.area, run["existing"],
+                              address=ss.address or "")
                 ss.plans.append(plan)
                 ss.active_plan = plan.id
                 ss.plan_seq += 1

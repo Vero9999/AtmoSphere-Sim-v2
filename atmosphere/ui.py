@@ -10,19 +10,21 @@ from html import escape
 from . import config as C
 from .i18n import fmt, t
 
-# Palet moodboard (lihat docs/DESIGN.md)
-MAROON = "#6E1529"
-SAGE = "#8FAE92"
-OLIVE = "#5F6F4A"
-MUSTARD = "#E3AE57"
-TAN = "#C3A784"
-PAGE_BG = "#F6F3EC"
-INK = "#1F2420"
-MUTED = "#5B6158"
-LINE = "#E4DED2"
+# Palet biru-hijau, sama dengan build pertama (dan video demo)
+MAROON = "#0E7490"  # warna utama (nama lama dipertahankan agar kode lain tidak berubah)
+SAGE = "#16A34A"
+OLIVE = "#0E7490"
+MUSTARD = "#D97706"
+TAN = "#CBD5E1"
+PAGE_BG = "#FFFFFF"
+INK = "#0F2A3A"
+MUTED = "#334155"  # cukup gelap supaya tidak terlihat buram
+LINE = "#E2E8F0"
+BORDER = "#334155"  # garis tombol
+GRADIENT = "linear-gradient(120deg, #0E7490, #16A34A)"
 
-LEVEL_COLOR = {"rendah": "#4F7A55", "sedang": "#B7791F", "tinggi": MAROON}
-LEVEL_BG = {"rendah": "#E3EDE2", "sedang": "#F8EBD3", "tinggi": "#F3DDE1"}
+LEVEL_COLOR = {"rendah": "#16A34A", "sedang": "#D97706", "tinggi": "#DC2626"}
+LEVEL_BG = {"rendah": "#DCFCE7", "sedang": "#FEF3C7", "tinggi": "#FEE2E2"}
 ICONS = {
     "limpasan": "💧", "erosi": "⛰️", "air_bersih": "🚰", "air_limbah": "🧪",
     "sampah": "🗑️", "karbon": "🌳", "kawasan_sensitif": "🛡️",
@@ -32,56 +34,83 @@ CSS = f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 html, body, .stApp, button, input, textarea {{ font-family: 'Plus Jakarta Sans', sans-serif; }}
-.stApp {{ background: {PAGE_BG}; }}
+/* Ukuran teks dasar 14 pt; semua ukuran rem di bawah ikut skala ini */
+html {{ font-size: 14pt !important; }}
+.stApp {{ background: {PAGE_BG}; color: {INK}; }}
+.stApp p, .stApp li, .stApp label, .stApp input, .stApp textarea, .stApp [data-testid="stMarkdownContainer"] {{
+  font-size: 14pt; color: {INK}; }}
+[data-testid="stCaptionContainer"], [data-testid="stCaptionContainer"] p {{ color: {MUTED} !important; opacity: 1 !important; font-size: 12pt; }}
+[data-testid="stWidgetLabel"] p {{ font-weight: 700; color: {INK}; }}
+textarea::placeholder, input::placeholder {{ font-style: italic; color: #64748B !important; opacity: 1; }}
+
+/* Tombol: garis tegas supaya tombol biasa tetap jelas terlihat */
+.stButton > button, .stFormSubmitButton > button, .stDownloadButton > button {{
+  border: 2px solid {BORDER} !important; border-radius: 12px; font-weight: 700; color: {INK}; background: #fff; }}
+.stButton > button:hover, .stFormSubmitButton > button:hover, .stDownloadButton > button:hover {{
+  border-color: {MAROON} !important; color: {MAROON}; }}
+.stButton > button[kind="primary"], .stFormSubmitButton > button[kind="primary"] {{
+  background: {GRADIENT} !important; border: 2px solid #0B5566 !important; color: #fff !important; }}
+.stButton > button:disabled {{ border-style: dashed !important; color: #94A3B8 !important; background: #E2E8F0 !important; }}
+[data-testid="stBaseButton-segmented_control"], [data-testid="stBaseButton-segmented_controlActive"] {{
+  border: 2px solid {BORDER} !important; font-weight: 700; }}
+[data-testid="stBaseButton-segmented_controlActive"] {{ background: {MAROON} !important; color: #fff !important; }}
+div[data-baseweb="input"], div[data-baseweb="textarea"], div[data-baseweb="select"] > div {{ border: 1.5px solid {BORDER} !important; }}
+
+.loc {{ border-radius: 16px; padding: 12px 16px; margin: 10px 0; border: 2px dashed {OLIVE}; background: #fff; }}
+.loc.locked {{ background: #DCFCE7; border: 2px solid #16A34A; }}
+.loc .lt {{ font-size: .8rem; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; color: {OLIVE}; }}
+.loc .la {{ font-size: 1.05rem; font-weight: 800; color: {INK}; margin-top: 2px; }}
+.loc .ld {{ font-size: .85rem; color: {MUTED}; }}
 .block-container {{ padding-top: 3.2rem; max-width: 1200px; }}
 header[data-testid="stHeader"] {{ background: transparent; }}
 h1, h2, h3, h4 {{ color: {INK}; letter-spacing: -0.01em; }}
 
-.hero {{ background: linear-gradient(120deg, {OLIVE} 0%, #4B5A3A 55%, {MAROON} 130%);
+.hero {{ background: linear-gradient(120deg, #0E7490 0%, #0891B2 45%, #16A34A 100%);
   color: #fff; border-radius: 22px; padding: 24px 28px; margin-bottom: 16px; position: relative; overflow: hidden; }}
 .hero:after {{ content: ""; position: absolute; right: -50px; top: -70px; width: 230px; height: 230px;
-  border-radius: 50%; background: rgba(227,174,87,.22); }}
+  border-radius: 50%; background: rgba(255,255,255,.10); }}
 .hero h1 {{ color: #fff; font-size: 1.9rem; font-weight: 800; margin: 0 0 4px 0; padding: 0; }}
-.hero p {{ margin: 0; opacity: .93; font-size: 1rem; max-width: 760px; }}
+.hero p {{ margin: 0; font-size: 1rem; max-width: 760px; }}
 .chips {{ display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; }}
 .chip {{ background: rgba(255,255,255,.16); border: 1px solid rgba(255,255,255,.35); color: #fff;
   padding: 4px 12px; border-radius: 999px; font-size: .78rem; font-weight: 600; }}
-.chip.warn {{ background: {MUSTARD}; color: #3D2A06; border-color: {MUSTARD}; }}
+.chip.warn {{ background: #FEF3C7; color: #92400E; border-color: #FDE68A; }}
 
 .stepper {{ display: flex; gap: 8px; margin: 2px 0 18px 0; }}
 .step {{ flex: 1; display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 14px;
-  background: #EDE8DD; color: {MUTED}; font-weight: 600; font-size: .85rem; }}
+  background: #F1F5F9; color: {MUTED}; font-weight: 600; font-size: .85rem; }}
 .step .num {{ width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center;
   background: {TAN}; color: #fff; font-size: .8rem; flex: none; }}
-.step.done {{ background: #E3EDE2; color: #2F4A33; }}
-.step.done .num {{ background: {OLIVE}; }}
-.step.active {{ background: #fff; color: {MAROON}; box-shadow: inset 0 0 0 2px {MAROON}; }}
+.step.done {{ background: #ECFDF5; color: #166534; }}
+.step.done .num {{ background: #16A34A; }}
+.step.active {{ background: #E0F2FE; color: #075985; box-shadow: inset 0 0 0 2px {MAROON}; }}
 .step.active .num {{ background: {MAROON}; }}
 
-.section-title {{ display: flex; align-items: center; gap: 10px; margin: 26px 0 8px 0; }}
-.section-title .badge {{ background: {MAROON}; color: #fff; width: 32px; height: 32px;
+.section-title {{ display: flex; align-items: center; gap: 10px; margin: 26px 0 0 0; }}
+.section-title .badge {{ background: {GRADIENT}; color: #fff; width: 32px; height: 32px;
   border-radius: 10px; display: grid; place-items: center; font-weight: 800; }}
 .section-title h2 {{ margin: 0; padding: 0; font-size: 1.35rem; font-weight: 800; }}
-.section-sub {{ color: {MUTED}; margin: -2px 0 12px 42px; font-size: .92rem; }}
+/* Keterangan singkat di bawah judul bernomor: dekat judul, lebih kecil, miring */
+.section-sub {{ color: {MUTED}; margin: 0 0 12px 42px; font-size: .72rem; font-style: italic; line-height: 1.35; }}
 
 .stats {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; }}
 .stat {{ background: #fff; border: 1px solid {LINE}; border-radius: 16px; padding: 14px 16px;
   display: flex; gap: 12px; align-items: center; }}
 .stat .ic {{ width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; font-size: 1.2rem;
-  background: #EEF3EC; flex: none; }}
+  background: #E0F2FE; flex: none; }}
 .stat .lb {{ font-size: .7rem; text-transform: uppercase; letter-spacing: .05em; color: {MUTED}; font-weight: 700; }}
 .stat .vl {{ font-size: 1.12rem; font-weight: 800; color: {INK}; }}
 
-.alert {{ border-radius: 14px; padding: 12px 16px; margin-top: 10px; font-weight: 600; font-size: .92rem;
-  background: #F3DDE1; color: {MAROON}; border-left: 6px solid {MAROON}; }}
+.alert {{ border-radius: 14px; padding: 12px 16px; margin-top: 10px; font-weight: 600; font-size: 1rem;
+  background: #FEF2F2; color: #991B1B; border-left: 6px solid #DC2626; }}
 
 .cover {{ display: flex; height: 16px; border-radius: 999px; overflow: hidden; margin: 6px 0 8px 0; }}
-.legend {{ display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: .82rem; color: #3A3F37; }}
+.legend {{ display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 1rem; color: {INK}; }}
 .legend i {{ display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 5px; }}
 
 .panel {{ background: #fff; border: 1px solid {LINE}; border-radius: 20px; padding: 18px 20px; height: 100%; }}
 .panel h4 {{ margin: 0 0 2px 0; font-size: 1rem; font-weight: 800; color: {INK}; }}
-.muted {{ color: {MUTED}; font-size: .8rem; }}
+.muted {{ color: {MUTED}; font-size: .72rem; font-style: italic; }}
 
 .cards {{ display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: 14px; }}
 .card {{ background: #fff; border: 1px solid {LINE}; border-radius: 18px; padding: 16px 18px;
@@ -93,11 +122,11 @@ h1, h2, h3, h4 {{ color: {INK}; letter-spacing: -0.01em; }}
 .card .big {{ font-size: 1.45rem; font-weight: 800; color: var(--lv); margin-top: 10px; }}
 .card .unit {{ font-size: .78rem; color: {MUTED}; font-weight: 600; }}
 .card .delta {{ font-size: .8rem; color: {MUTED}; margin-top: 2px; }}
-.card .sum {{ font-size: .85rem; color: #3A3F37; margin-top: 8px; line-height: 1.45; }}
-.card details {{ margin-top: 8px; font-size: .84rem; }}
+.card .sum {{ font-size: 1rem; color: {MUTED}; margin-top: 8px; line-height: 1.45; }}
+.card details {{ margin-top: 8px; font-size: 1rem; }}
 .card summary {{ cursor: pointer; color: {OLIVE}; font-weight: 700; }}
-.card ul {{ margin: 6px 0 0 0; padding-left: 18px; color: #3A3F37; }}
-.phase {{ font-size: .68rem; font-weight: 700; color: {OLIVE}; background: #EEF3EC; padding: 2px 8px; border-radius: 6px; }}
+.card ul {{ margin: 6px 0 0 0; padding-left: 18px; color: {MUTED}; }}
+.phase {{ font-size: .68rem; font-weight: 700; color: {OLIVE}; background: #E0F2FE; padding: 2px 8px; border-radius: 6px; }}
 
 .pbars {{ display: flex; gap: 14px; align-items: flex-end; height: 150px; margin-top: 12px; }}
 .pbar {{ flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 100%; }}
@@ -106,17 +135,16 @@ h1, h2, h3, h4 {{ color: {INK}; letter-spacing: -0.01em; }}
 .pbar .l {{ font-size: .75rem; color: {MUTED}; margin-top: 6px; font-weight: 600; text-align: center; }}
 .pbar.on .l {{ color: {MAROON}; font-weight: 800; }}
 
-.doc {{ background: #fff; border: 1px solid {LINE}; border-left: 6px solid {MUSTARD}; border-radius: 18px; padding: 16px 22px; }}
-.doc .t {{ font-size: .75rem; text-transform: uppercase; letter-spacing: .06em; font-weight: 800; color: #8A5A12; }}
+.doc {{ background: linear-gradient(120deg, #ECFEFF, #F0FDF4); border: 1px solid #BAE6FD; border-left: 6px solid {MAROON}; border-radius: 18px; padding: 16px 22px; }}
+.doc .t {{ font-size: .75rem; text-transform: uppercase; letter-spacing: .06em; font-weight: 800; color: {MAROON}; }}
 .doc .d {{ font-size: 1.6rem; font-weight: 800; color: {INK}; }}
-.doc ul {{ margin: 6px 0 4px 0; padding-left: 18px; color: #3A3F37; font-size: .9rem; }}
+.doc ul {{ margin: 6px 0 4px 0; padding-left: 18px; color: {INK}; font-size: 1rem; }}
 .doc .n {{ font-size: .78rem; color: {MUTED}; }}
-.gemma-tag {{ display: inline-block; background: {OLIVE}; color: #fff; font-size: .72rem; font-weight: 800;
+.gemma-tag {{ display: inline-block; background: {GRADIENT}; color: #fff; font-size: .72rem; font-weight: 800;
   padding: 3px 10px; border-radius: 8px; }}
 
-div[data-testid="stForm"] {{ border-radius: 18px; border-color: {LINE}; background: #FFFDF8; }}
-.stButton > button, .stFormSubmitButton > button, .stDownloadButton > button {{ border-radius: 12px; font-weight: 700; }}
-section[data-testid="stSidebar"] {{ background: #EFEADF; }}
+div[data-testid="stForm"] {{ border-radius: 18px; border: 1.5px solid {LINE}; background: #FAFDFE; }}
+section[data-testid="stSidebar"] {{ background: #F3FAFB; }}
 @media (max-width: 640px) {{
   .stepper {{ display: grid; grid-template-columns: 1fr 1fr; }}
   .hero {{ padding: 18px; }} .hero h1 {{ font-size: 1.5rem; }}
@@ -132,6 +160,14 @@ def _svg(svg: str, style: str = "width:100%") -> str:
     """Streamlit menyaring <svg> di st.html, jadi SVG dikirim sebagai gambar data URI."""
     data = base64.b64encode(svg.strip().encode("utf-8")).decode()
     return f'<img alt="" style="{style}" src="data:image/svg+xml;base64,{data}">'
+
+
+def location_box(address: str, detail: str, title: str, locked: bool) -> str:
+    """Kotak alamat lokasi. Saat terkunci diberi latar hijau sage sebagai tanda."""
+    icon = "🔒" if locked else "📍"
+    cls = "loc locked" if locked else "loc"
+    return (f'<div class="{cls}"><div class="lt">{icon} {escape(title)}</div>'
+            f'<div class="la">{escape(address)}</div><div class="ld">{escape(detail)}</div></div>')
 
 
 def level_label(level: str, lang: str) -> str:

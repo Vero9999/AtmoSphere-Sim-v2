@@ -11,6 +11,8 @@ streamlit_testing = pytest.importorskip("streamlit.testing.v1")
 @pytest.fixture
 def app(monkeypatch):
     monkeypatch.setenv("LLM_BACKEND", "mock")
+    import atmosphere.geo
+    monkeypatch.setattr(atmosphere.geo, "reverse_geocode", lambda lat, lon, lang="id": "Jalan Uji, Batam Kota")
     at = streamlit_testing.AppTest.from_file("../app.py", default_timeout=60)
     at.run()
     assert not at.exception
@@ -67,3 +69,18 @@ def test_full_flow_two_plans_and_language(app):
     at.run()
     assert not at.exception
     assert button(at, "💾").label == "💾 Save plan"
+
+
+def test_location_lock_and_thousand_separators(app):
+    at = app
+    at.session_state["area"] = area_geojson()
+    at.session_state["address"] = "Jalan Uji, Batam Kota"
+    at.run()
+    assert not at.exception
+    assert any(b.label.startswith("🗺️") for b in at.button)  # tombol Ubah lokasi = lokasi terkunci
+    import re
+    assert re.fullmatch(r"\d\.\d{3}", at.session_state["w_luas_lahan_m2"])  # mis. "3.973"
+    at.text_input(key="w_luas_lahan_m2").input("1.250.000")
+    next(b for b in at.button if b.label.startswith("🔍")).click().run()
+    assert not at.exception
+    assert at.session_state["run"]["params"]["luas_lahan_m2"] == 1_250_000

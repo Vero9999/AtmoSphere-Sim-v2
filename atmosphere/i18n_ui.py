@@ -194,3 +194,34 @@ UI_TEXT = {
         "side.reset": "↺ Start over",
     },
 }
+
+UI_TEXT["id"].update({
+    "s1.address": "Alamat perkiraan",
+    "s1.address_unknown": "Alamat tidak ditemukan (periksa koneksi internet).",
+    "s1.candidate": "Lokasi dipilih, belum dipakai",
+    "s1.locked": "Lokasi terkunci",
+    "s1.change": "🗺️ Ubah lokasi",
+    "s3.text": "Deskripsikan rencana kegiatan pembangunan Anda sedetail mungkin",
+    "s3.include": "Sebutkan sedetail mungkin: {v}.",
+    "s3.example_prefix": "Misalnya: ",
+    "s3.siteplan": "Unggah gambar siteplan (opsional, JPG/PNG)",
+    "s3.siteplan_help": "Gemma 4 membaca luas lahan, tapak, jalan/parkir, jumlah lantai dan unit dari gambar siteplan.",
+    "s3.need_text": "Tulis deskripsi atau unggah gambar siteplan dulu.",
+    "s3.bad_number": "Angka di kolom \"{v}\" tidak valid. Contoh penulisan: 4.000 atau 1.250.000.",
+    "col.location": "Lokasi",
+})
+UI_TEXT["en"].update({
+    "s1.address": "Approximate address",
+    "s1.address_unknown": "Address not found (check the internet connection).",
+    "s1.candidate": "Location selected, not used yet",
+    "s1.locked": "Location locked",
+    "s1.change": "🗺️ Change location",
+    "s3.text": "Describe your building plan in as much detail as possible",
+    "s3.include": "Include as much as you can: {v}.",
+    "s3.example_prefix": "For example: ",
+    "s3.siteplan": "Upload a site plan image (optional, JPG/PNG)",
+    "s3.siteplan_help": "Gemma 4 reads the land area, footprint, roads/parking, floors and units from the site plan image.",
+    "s3.need_text": "Please write a description or upload a site plan image first.",
+    "s3.bad_number": "The number in \"{v}\" is not valid. Write it like 4,000 or 1,250,000.",
+    "col.location": "Location",
+})

@@ -20,6 +20,7 @@ class Plan:
     params: dict
     area: dict  # GeoJSON geometry
     existing: object  # ExistingCondition (termasuk koreksi user)
+    address: str = ""
     id: str = field(default_factory=lambda: uuid.uuid4().hex[:8])
 
 
@@ -41,6 +42,7 @@ def comparison_rows(plans: list, lang: str = "id") -> list:
         row = {
             t("col.name", lang): plan.name,
             t("col.kind", lang): r.scenario_label,
+            t("col.location", lang): plan.address or "-",
             t("col.land", lang): round(plan.params["luas_lahan_m2"]),
             t("col.idx_c", lang): tl["konstruksi"]["indeks_risiko"],
             t("col.idx_o", lang): tl["10th"]["indeks_risiko"],

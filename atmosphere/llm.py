@@ -322,7 +322,7 @@ class GemmaClient:
                 yield fallback_text
 
     # --- fitur ----------------------------------------------------------------
-    def extract_params(self, text: str, scenario, lang: str = "id") -> dict:
+    def extract_params(self, text: str, scenario, lang: str = "id", image: tuple | None = None) -> dict:
         """Teks bebas -> {param: nilai, "pertanyaan": [...], "jenis_kegiatan": key}."""
         from .scenarios import SCENARIOS
 
@@ -345,9 +345,12 @@ class GemmaClient:
                 "(use \"lainnya\" for schools, places of worship, warehouses, etc).\n"
                 f"Also add \"pertanyaan\": a list of at most 3 short questions, in "
                 f"{'Indonesian' if lang == 'id' else 'English'}, for important missing info.\n\n"
-                f"Description: {text}\n\nReply with JSON ONLY."
+                + ("An image of the site plan is attached: read areas, floors and unit/room counts from it "
+                   "(labels, dimensions, legend). The text description, if any, takes priority.\n"
+                   if image else "")
+                + f"Description: {text or '(see the site plan image)'}\n\nReply with JSON ONLY."
             )
-            data = _parse_json(self._chat(prompt, lang, json_mode=True))
+            data = _parse_json(self._chat(prompt, lang, images=[image] if image else None, json_mode=True))
             return data or self._rule_extract(text)
 
         result = self._try(call, lambda: self._rule_extract(text), lang)

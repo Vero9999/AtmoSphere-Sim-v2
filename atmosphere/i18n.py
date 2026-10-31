@@ -16,6 +16,22 @@ def fmt(x: float, nd: int = 0, lang: str = DEFAULT_LANG) -> str:
     return s
 
 
+def parse_number(raw) -> float:
+    """'4.000' / '4,000' -> 4000, '1.250.000' -> 1250000, '2,5' / '2.5' -> 2.5.
+
+    Pemisah yang diikuti tepat 3 angka dianggap pemisah ribuan, jadi bekerja untuk
+    format Indonesia maupun Inggris. Melempar ValueError jika bukan angka.
+    """
+    import re
+
+    if isinstance(raw, (int, float)):
+        return float(raw)
+    text = str(raw).strip().replace(" ", "")
+    text = re.sub(r"(?<=\d)[.,](?=\d{3}(\D|$))", "", text)
+    text = re.sub(r"(?<=\d)[.,](?=\d{3}(\D|$))", "", text)
+    return float(text.replace(",", "."))
+
+
 def t(key: str, lang: str = DEFAULT_LANG, **kw) -> str:
     text = TEXT.get(lang, {}).get(key) or TEXT[DEFAULT_LANG].get(key) or key
     return text.format(**kw) if kw else text
