@@ -59,7 +59,7 @@ def comparison_rows(plans: list, lang: str = "id") -> list:
     return rows
 
 
-def to_excel(rows: list) -> bytes:
+def to_excel(rows: list, note: str = "") -> bytes:
     import pandas as pd
 
     buf = io.BytesIO()
@@ -70,4 +70,7 @@ def to_excel(rows: list) -> bytes:
         for i, col in enumerate(df.columns, start=1):
             width = max([len(str(col))] + [len(str(v)) for v in df[col]]) + 2
             sheet.column_dimensions[sheet.cell(row=1, column=i).column_letter].width = min(width, 45)
+        if note:
+            pd.DataFrame({"": [note]}).to_excel(writer, index=False, header=False, sheet_name="Disclaimer")
+            writer.sheets["Disclaimer"].column_dimensions["A"].width = 120
     return buf.getvalue()

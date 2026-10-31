@@ -126,7 +126,7 @@ def delete_plan(plan_id):
 
 # --- Bahasa, header, sidebar ------------------------------------------------------
 st.html(ui.CSS)
-_, lang_col = st.columns([5, 1])
+_, lang_col = st.columns([3.6, 1.4])
 with lang_col:
     picked = st.segmented_control(
         "Bahasa / Language", list(LANGS), default=ss.lang, key="lang_widget",
@@ -140,6 +140,7 @@ lang = ss.lang
 step = 4 if ss.run else 3 if ss.area else 1
 st.html(ui.hero(lang, llm.label, llm.is_mock, store.is_dummy))
 st.html(ui.stepper(step, lang))
+st.html(ui.disclaimer(lang, compact=True))
 if llm.last_error:
     st.warning(llm.last_error)
 
@@ -152,12 +153,14 @@ with st.sidebar:
     if not ss.plans:
         st.caption(t("plan.none", lang))
     for plan in ss.plans:
-        c1, c2, c3 = st.columns([3, 1.2, 1.2])
         mark = "▶ " if plan.id == ss.active_plan else ""
-        c1.markdown(f"{mark}**{plan.name}**  \n<small>{SCENARIOS[plan.scenario_key].label(lang)}</small>",
+        st.markdown(f"{mark}**{plan.name}**  \n<small>{SCENARIOS[plan.scenario_key].label(lang)}</small>",
                     unsafe_allow_html=True)
-        c2.button(t("plan.open", lang), key=f"open_{plan.id}", on_click=open_plan, args=(plan,))
-        c3.button("🗑", key=f"del_{plan.id}", on_click=delete_plan, args=(plan.id,), help=t("plan.delete", lang))
+        c2, c3 = st.columns(2)
+        c2.button(t("plan.open", lang), key=f"open_{plan.id}", on_click=open_plan, args=(plan,),
+                  use_container_width=True)
+        c3.button("🗑 " + t("plan.delete", lang), key=f"del_{plan.id}", on_click=delete_plan, args=(plan.id,),
+                  use_container_width=True)
     st.button(t("plan.new", lang), on_click=new_plan, use_container_width=True)
     st.markdown(f"**{t('side.legend', lang)}**")
     for k, color in C.LAND_COVER_COLORS.items():
@@ -183,7 +186,7 @@ def map_section():
             ss.edit_map = True
             st.rerun()
         return
-    col_map, col_opt = st.columns([3, 1])
+    col_map, col_opt = st.columns([2.6, 1.2])
     with col_opt:
         with st.container(border=True):
             st.markdown(f"**{t('s1.settings', lang)}**")
@@ -411,9 +414,8 @@ def results_view(result):
         st.html(ui.period_bars(result.timeline, period, lang))
     st.markdown(f"#### {t('s4.totals', lang, v=t('period.' + period, lang))}")
     st.html(ui.period_totals(p, lang))
-    head, toggle = st.columns([3, 1])
-    head.markdown(f"#### {t('s4.cards', lang)}")
-    show_all = toggle.toggle(t("s4.show_all", lang), key="show_all")
+    st.markdown(f"#### {t('s4.cards', lang)}")
+    show_all = st.toggle(t("s4.show_all", lang), key="show_all")
     comps = result.components if show_all else ui.components_for_period(result.components, period)
     st.html(ui.component_cards(comps, lang))
 
@@ -452,6 +454,7 @@ def results_section():
     result = P.compute(run["scenario_key"], run["params"], run["existing"], lang)
     sig = P.signature(run["scenario_key"], run["params"], run["existing"])
     st.html(ui.section(4, t("s4.title", lang), t("s4.sub", lang, v=result.scenario_label)))
+    st.html(ui.disclaimer(lang))
     results_view(result)
     st.write("")
     st.html(ui.regulation_box(result.regulation, lang))
@@ -468,8 +471,8 @@ def results_section():
     with st.container(border=True):
         active = next((p for p in ss.plans if p.id == ss.active_plan), None)
         ss.setdefault("plan_name", active.name if active else t("plan.default", lang, n=ss.plan_seq))
-        c1, c2, c3 = st.columns([2, 1, 1], vertical_alignment="bottom")
-        name = c1.text_input(t("plan.name", lang), key="plan_name")
+        name = st.text_input(t("plan.name", lang), key="plan_name")
+        c2, c3 = st.columns(2)
         if c2.button(t("plan.save", lang), type="primary", use_container_width=True):
             name = name.strip() or t("plan.default", lang, n=ss.plan_seq)
             if active:
@@ -496,7 +499,8 @@ def compare_section():
     st.markdown(f"### 📊 {t('plan.compare', lang)}")
     rows = P.comparison_rows(ss.plans, lang)
     st.dataframe(rows, hide_index=True, use_container_width=True)
-    st.download_button(t("plan.excel", lang), data=P.to_excel(rows), file_name="atmosphere-sim-plans.xlsx",
+    st.download_button(t("plan.excel", lang),
+                       data=P.to_excel(rows, t("disc.title", lang) + " " + t("disc.body", lang)), file_name="atmosphere-sim-plans.xlsx",
                        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
     st.caption(t("plan.session_note", lang))
 

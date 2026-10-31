@@ -225,3 +225,14 @@ UI_TEXT["en"].update({
     "s3.bad_number": "The number in \"{v}\" is not valid. Write it like 4,000 or 1,250,000.",
     "col.location": "Location",
 })
+
+UI_TEXT["id"].update({
+    "disc.title": "Hanya untuk kajian awal (preliminary).",
+    "disc.short": "Bukan analisis dampak lingkungan resmi dan tidak menggantikan AMDAL, UKL-UPL, SPPL, atau dokumen lingkungan lainnya. Hasil perlu dikaji ulang oleh ahli.",
+    "disc.body": "Hasil AtmoSphere Sim bukan analisis dampak lingkungan resmi dan tidak dapat digunakan untuk menggantikan dokumen AMDAL, UKL-UPL, SPPL, atau dokumen lingkungan lainnya. Angka dihitung dari model sederhana dan data yang masih dummy, sehingga kebenaran hasilnya perlu dikaji ulang oleh tenaga ahli lingkungan yang kompeten.",
+})
+UI_TEXT["en"].update({
+    "disc.title": "For preliminary screening only.",
+    "disc.short": "Not an official environmental impact analysis and does not replace AMDAL, UKL-UPL, SPPL or any other environmental document. Results must be reviewed by an expert.",
+    "disc.body": "AtmoSphere Sim results are not an official environmental impact analysis and cannot replace an AMDAL, UKL-UPL, SPPL or any other environmental document. The numbers come from simple models and data that is still dummy, so the results must be reviewed by a qualified environmental expert.",
+})

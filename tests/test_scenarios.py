@@ -122,3 +122,18 @@ def test_english_output():
 def test_every_text_has_both_languages():
     from atmosphere.i18n import TEXT
     assert set(TEXT["id"]) == set(TEXT["en"])
+
+
+def test_operational_index_not_zero_after_heavy_construction():
+    # Gudang di lahan yang sudah industri: dulu indeks 50 lalu 0 di tahun 1-10.
+    sc = SCENARIOS["lainnya"]
+    ex = make_existing(land_cover_share={"industri": 0.6, "lahan_terbuka": 0.4})
+    tl = sc.run(ex, sc.defaults(20000) | {"jumlah_orang": 150, "cut_and_fill": True}).timeline
+    assert tl[0]["indeks_risiko"] > tl[1]["indeks_risiko"] > 0
+
+
+def test_scores_match_levels():
+    sc = SCENARIOS["ruko"]
+    for c in sc.run(make_existing(touches_mangrove=True), sc.defaults(4000) | {"cut_and_fill": True}).components:
+        band = "rendah" if c.score < 33 else "sedang" if c.score < 67 else "tinggi"
+        assert band == c.level, (c.key, c.score, c.level)

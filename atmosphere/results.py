@@ -16,6 +16,7 @@ class ComponentImpact:
     unit: str = ""
     mitigation: list = field(default_factory=list)
     phase: str = "semua"  # konstruksi / operasional / semua
+    score: float = 0.0  # 0-100, untuk indeks risiko
 
 
 @dataclass

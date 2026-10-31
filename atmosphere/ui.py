@@ -58,6 +58,9 @@ textarea::placeholder, input::placeholder {{ font-style: italic; color: #64748B 
 [data-testid="stBaseButton-segmented_controlActive"] {{ background: {MAROON} !important; color: #fff !important; }}
 div[data-baseweb="input"], div[data-baseweb="textarea"], div[data-baseweb="select"] > div {{ border: 1.5px solid {BORDER} !important; }}
 
+.disc {{ background: #FFFBEB; border: 1.5px solid #F59E0B; border-left: 6px solid #D97706; color: #78350F;
+  border-radius: 14px; padding: 12px 16px; margin: 8px 0 14px 0; font-size: .95rem; line-height: 1.45; }}
+.disc.compact {{ font-size: .8rem; padding: 8px 14px; margin: 0 0 12px 0; }}
 .loc {{ border-radius: 16px; padding: 12px 16px; margin: 10px 0; border: 2px dashed {OLIVE}; background: #fff; }}
 .loc.locked {{ background: #DCFCE7; border: 2px solid #16A34A; }}
 .loc .lt {{ font-size: .8rem; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; color: {OLIVE}; }}
@@ -164,6 +167,13 @@ def _svg(svg: str, style: str = "width:100%") -> str:
     return f'<img alt="" style="{style}" src="data:image/svg+xml;base64,{data}">'
 
 
+def disclaimer(lang: str, compact: bool = False) -> str:
+    """Peringatan bahwa hasil hanya untuk kajian awal, bukan pengganti dokumen lingkungan."""
+    body = t("disc.short" if compact else "disc.body", lang)
+    cls = "disc compact" if compact else "disc"
+    return f'<div class="{cls}"><b>⚠️ {escape(t("disc.title", lang))}</b> {escape(body)}</div>'
+
+
 def location_box(address: str, detail: str, title: str, locked: bool) -> str:
     """Kotak alamat lokasi. Saat terkunci diberi latar hijau sage sebagai tanda."""
     icon = "🔒" if locked else "📍"
@@ -241,7 +251,7 @@ def gauge(index: int, overall: str, lang: str) -> str:
     arc = f"M {cx - r} {cy} A {r} {r} 0 0 1 {cx + r} {cy}"
     svg = f"""<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 120" font-family="sans-serif">
     <defs><linearGradient id="g" x1="0" x2="1"><stop offset="0" stop-color="{SAGE}"/>
-      <stop offset=".5" stop-color="{MUSTARD}"/><stop offset="1" stop-color="{MAROON}"/></linearGradient></defs>
+      <stop offset=".5" stop-color="{MUSTARD}"/><stop offset="1" stop-color="#DC2626"/></linearGradient></defs>
     <path d="{arc}" fill="none" stroke="{LINE}" stroke-width="16" stroke-linecap="round"/>
     <path d="{arc}" fill="none" stroke="url(#g)" stroke-width="16" stroke-linecap="round"
       stroke-dasharray="{filled:.1f} {length:.1f}"/>

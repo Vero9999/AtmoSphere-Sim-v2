@@ -89,3 +89,25 @@ def water_demand_m3_day(persons: float) -> float:
 
 def waste_kg_day(persons: float) -> float:
     return persons * C.WASTE_KG_PER_PERSON_DAY
+
+
+# --- Skor kontinu 0-100 (untuk indeks risiko) ------------------------------------
+# Batas skor sejalan dengan tingkat: rendah < 33 <= sedang < 67 <= tinggi.
+def _piecewise(value: float, low: float, mid: float, top: float) -> float:
+    if value <= 0:
+        return 0.0
+    if value < low:
+        return 33 * value / low
+    if value < mid:
+        return 33 + 34 * (value - low) / (mid - low)
+    return min(100.0, 67 + 33 * (value - mid) / (top - mid))
+
+
+def score_from_thresholds(value: float, key: str) -> float:
+    low, mid = C.IMPACT_THRESHOLDS[key]
+    return _piecewise(value, low, mid, 2 * mid)
+
+
+def erosion_score(rate_t_ha_yr: float) -> float:
+    # rendah < 60 (sangat ringan/ringan), sedang < 180, tinggi >= 180; jenuh di 480 (sangat berat)
+    return _piecewise(rate_t_ha_yr, 60, 180, 480)

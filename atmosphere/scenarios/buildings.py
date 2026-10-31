@@ -70,7 +70,8 @@ class BuildingScenario(Scenario):
         extra = max(0.0, v_after - v_before)
         components.append(ComponentImpact(
             key="limpasan",
-            phase="operasional",
+            phase="semua",  # lahan terbuka saat konstruksi, lalu tertutup bangunan selamanya
+            score=M.score_from_thresholds(increase, "limpasan_kenaikan_pct"),
             name=t("c.limpasan", lang),
             level=M.level_from_thresholds(increase, "limpasan_kenaikan_pct"),
             summary=t("c.limpasan.sum", lang, storm=f(C.DESIGN_STORM_MM), before=f(v_before), after=f(v_after),
@@ -96,6 +97,7 @@ class BuildingScenario(Scenario):
         components.append(ComponentImpact(
             key="erosi",
             phase="konstruksi",
+            score=M.erosion_score(a_constr),
             name=t("c.erosi", lang),
             level=M.erosion_level(a_constr),
             summary=t("c.erosi.sum", lang, slope=f(existing.slope_pct, 1), rate=f(a_constr),
@@ -114,6 +116,7 @@ class BuildingScenario(Scenario):
         components.append(ComponentImpact(
             key="air_bersih",
             phase="operasional",
+            score=M.score_from_thresholds(water, "air_bersih_m3_hari"),
             name=t("c.air_bersih", lang),
             level=M.level_from_thresholds(water, "air_bersih_m3_hari"),
             summary=t("c.air_bersih.sum", lang, persons=f(persons), who=t("who." + self.who, lang), water=f(water, 1)),
@@ -125,6 +128,7 @@ class BuildingScenario(Scenario):
         components.append(ComponentImpact(
             key="air_limbah",
             phase="operasional",
+            score=M.score_from_thresholds(water, "air_bersih_m3_hari"),
             name=t("c.air_limbah", lang),
             level=M.level_from_thresholds(water, "air_bersih_m3_hari"),
             summary=t("c.air_limbah.sum", lang, ww=f(wastewater, 1)),
@@ -136,6 +140,7 @@ class BuildingScenario(Scenario):
         components.append(ComponentImpact(
             key="sampah",
             phase="operasional",
+            score=M.score_from_thresholds(waste, "sampah_kg_hari"),
             name=t("c.sampah", lang),
             level=M.level_from_thresholds(waste, "sampah_kg_hari"),
             summary=t("c.sampah.sum", lang, waste=f(waste)),
@@ -150,7 +155,8 @@ class BuildingScenario(Scenario):
         co2 = max(0.0, stock_before - stock_after) * C.CO2_PER_C
         components.append(ComponentImpact(
             key="karbon",
-            phase="konstruksi",
+            phase="semua",  # vegetasi yang hilang tidak kembali; serapan karbonnya hilang permanen
+            score=M.score_from_thresholds(co2, "emisi_karbon_tco2"),
             name=t("c.karbon", lang),
             level=M.level_from_thresholds(co2, "emisi_karbon_tco2"),
             summary=t("c.karbon.sum", lang, co2=f(co2), cars=f(co2 / 2.3)),
@@ -171,6 +177,7 @@ class BuildingScenario(Scenario):
                 key="kawasan_sensitif",
                 name=t("c.kawasan_sensitif", lang),
                 level="tinggi",
+                score=100.0,
                 summary=t("c.kawasan_sensitif.sum", lang, what=t("c.kawasan_sensitif.and", lang).join(what)),
                 mitigation=[t("c.kawasan_sensitif.m1", lang)],
             ))
@@ -269,19 +276,19 @@ class LainnyaScenario(BuildingScenario):
 
 
 PERIODS = [("konstruksi", 0), ("1th", 1), ("5th", 5), ("10th", 10)]
-_LEVEL_SCORE = {"rendah": 0, "sedang": 50, "tinggi": 100}
 
 
 def build_timeline(components, construction_months, sediment_t, extra_runoff_m3_year,
                    water_m3_day, wastewater_m3_day, waste_kg_day, co2_t, lang="id") -> list:
     """Akumulasi dampak per periode: saat konstruksi, lalu 1/5/10 tahun setelah bangunan dipakai.
 
-    Indeks risiko periode = rata-rata skor komponen yang aktif di fase itu (0-100).
+    Indeks risiko periode = rata-rata skor kontinu (0-100) komponen yang aktif di fase itu.
+    Dampak permanen (limpasan dari permukaan kedap, hilangnya karbon) ikut dihitung di semua periode.
     Dampak yang menumpuk (air, limbah, sampah, limpasan) dijumlahkan sepanjang waktu.
     """
     def index(phase):
         active = [c for c in components if c.phase in (phase, "semua")]
-        return round(sum(_LEVEL_SCORE[c.level] for c in active) / len(active)) if active else 0
+        return round(sum(c.score for c in active) / len(active)) if active else 0
 
     out = []
     for key, years in PERIODS:
