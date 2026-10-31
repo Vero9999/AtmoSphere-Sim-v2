@@ -66,3 +66,21 @@ def test_coerce_cleans_llm_values():
     assert coerce("abc", "float") is None
     assert coerce(-5, "float") is None
     assert coerce(" Sekolah ", "text") == "Sekolah"
+
+
+def test_stream_retries_after_transient_error(monkeypatch):
+    monkeypatch.setenv("LLM_BACKEND", "mock")
+    llm = GemmaClient()
+    llm.backend = "google"  # pura-pura aktif
+    calls = {"n": 0}
+
+    def flaky(prompt, lang):
+        calls["n"] += 1
+        if calls["n"] == 1:
+            raise RuntimeError("500 INTERNAL")
+        yield "ok"
+
+    monkeypatch.setattr(llm, "_stream", flaky)
+    monkeypatch.setattr("atmosphere.llm.time.sleep", lambda s: None)
+    assert "".join(llm._try_stream("p", "demo", "en")) == "ok"
+    assert llm.last_error is None and calls["n"] == 2

@@ -432,9 +432,11 @@ def gemma_view(result_dict, sig):
             st.markdown(ss.explanations[cache_key])
         elif st.button(t("s4.ai_btn", lang), type="primary"):
             text = st.write_stream(llm.explain_stream(result_dict, lang))
-            ss.explanations[cache_key] = text if isinstance(text, str) else "".join(map(str, text))
             if llm.last_error:
+                # Gemma gagal: jangan simpan teks demo, supaya tombol bisa ditekan lagi
                 st.warning(llm.last_error)
+            else:
+                ss.explanations[cache_key] = text if isinstance(text, str) else "".join(map(str, text))
 
         history = ss.chats.setdefault(cache_key, [])
         for msg in history:

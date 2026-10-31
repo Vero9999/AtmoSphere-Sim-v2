@@ -312,14 +312,19 @@ class GemmaClient:
             return
         self.last_error = None
         got_any = False
-        try:
-            for piece in self._stream(prompt, lang):
-                got_any = True
-                yield piece
-        except Exception as exc:
-            self.last_error = DEMO[lang]["failed"].format(err=str(exc)[:160])
-            if not got_any:
-                yield fallback_text
+        for attempt in range(3):  # server kadang membalas 500/503 sesaat; coba lagi selama belum ada teks
+            try:
+                for piece in self._stream(prompt, lang):
+                    got_any = True
+                    yield piece
+                return
+            except Exception as exc:
+                if got_any or attempt == 2:
+                    self.last_error = DEMO[lang]["failed"].format(err=str(exc)[:160])
+                    if not got_any:
+                        yield fallback_text
+                    return
+                time.sleep(1 + attempt)
 
     # --- fitur ----------------------------------------------------------------
     def extract_params(self, text: str, scenario, lang: str = "id", image: tuple | None = None) -> dict:
