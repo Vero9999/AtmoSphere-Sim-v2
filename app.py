@@ -28,7 +28,7 @@ st.set_page_config(page_title="AtmoSphere Sim", page_icon="🌏", layout="wide")
 # Streamlit Community Cloud: rahasia diisi lewat st.secrets, bukan file .env
 try:
     for _k in ("LLM_BACKEND", "GEMMA_MODEL", "GEMMA_THINKING", "GOOGLE_API_KEY", "OLLAMA_URL"):
-        if _k in st.secrets and not os.getenv(_k):
+        if _k in st.secrets:  # secrets selalu menang, supaya perubahan di Settings langsung terpakai
             os.environ[_k] = str(st.secrets[_k])
 except Exception:  # tidak ada secrets.toml saat dijalankan lokal
     pass
@@ -40,7 +40,8 @@ def get_store():
 
 
 @st.cache_resource
-def get_llm():
+def get_llm(settings: tuple):
+    """Dibuat ulang otomatis kalau pengaturan (backend/model/API key) berubah."""
     return GemmaClient()
 
 
@@ -70,7 +71,8 @@ def center_of(geom: dict) -> tuple:
     c = shape(geom).centroid
     return round(c.y, 5), round(c.x, 5)
 
-store, llm = get_store(), get_llm()
+_llm_settings = tuple(os.getenv(k, "") for k in ("LLM_BACKEND", "GEMMA_MODEL", "GOOGLE_API_KEY", "OLLAMA_URL"))
+store, llm = get_store(), get_llm(_llm_settings)
 ss = st.session_state
 for key, value in {
     "lang": "id", "area": None, "run": None, "vals": {}, "plans": [], "active_plan": None,
