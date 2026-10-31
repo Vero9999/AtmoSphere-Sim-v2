@@ -117,3 +117,8 @@ def test_english_output():
     assert "mangrove" in result.regulation["alasan"][0]
     assert result.timeline[1]["label"] == "1 year"
     assert sc.label("en") == "Shophouse (ruko)"
+
+
+def test_every_text_has_both_languages():
+    from atmosphere.i18n import TEXT
+    assert set(TEXT["id"]) == set(TEXT["en"])
