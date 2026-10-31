@@ -334,7 +334,7 @@ def plan_section(polygon, existing):
 
     include = ", ".join(p.label(lang).split(" (")[0].lower() for p in scenario.params if p.kind != "text")
     text = st.text_area(t("s3.text", lang), placeholder=t("s3.example_prefix", lang) + scenario.example_text(lang),
-                        height=110, key="plan_text")
+                        height="content", key="plan_text")
     st.caption(t("s3.include", lang, v=include))
     siteplan = st.file_uploader(t("s3.siteplan", lang), type=["jpg", "jpeg", "png"], key="w_siteplan",
                                 help=t("s3.siteplan_help", lang))

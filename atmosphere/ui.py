@@ -41,6 +41,8 @@ html {{ font-size: 14pt !important; }}
   font-size: 14pt; color: {INK}; }}
 [data-testid="stCaptionContainer"], [data-testid="stCaptionContainer"] p {{ color: {MUTED} !important; opacity: 1 !important; font-size: 12pt; }}
 [data-testid="stWidgetLabel"] p {{ font-weight: 700; color: {INK}; }}
+/* Kotak deskripsi rencana: minimal ±5 baris, lalu memanjang mengikuti isi */
+.st-key-plan_text textarea {{ min-height: 170px !important; line-height: 1.5; }}
 textarea::placeholder, input::placeholder {{ font-style: italic; color: #64748B !important; opacity: 1; }}
 
 /* Tombol: garis tegas supaya tombol biasa tetap jelas terlihat */
