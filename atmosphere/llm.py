@@ -326,8 +326,14 @@ class GemmaClient:
         """Teks bebas -> {param: nilai, "pertanyaan": [...], "jenis_kegiatan": key}."""
         from .scenarios import SCENARIOS
 
-        keys = {p.key: f"{p.label('en')} ({p.kind})" for p in scenario.params}
         kinds = [k for k, s in SCENARIOS.items() if s.available]
+        # Semua kunci dari semua jenis kegiatan, supaya kalau Gemma mendeteksi jenis lain
+        # (mis. user memilih Rumah tapi menulis "hotel 120 kamar"), datanya tidak hilang.
+        all_params = {p.key: p for p in scenario.params}
+        for k in kinds:
+            for p in SCENARIOS[k].params:
+                all_params.setdefault(p.key, p)
+        keys = {k: f"{p.label('en')} ({p.kind})" for k, p in all_params.items()}
 
         def call():
             prompt = (
@@ -345,7 +351,7 @@ class GemmaClient:
             return data or self._rule_extract(text)
 
         result = self._try(call, lambda: self._rule_extract(text), lang)
-        kinds_by_key = {p.key: p.kind for p in scenario.params}
+        kinds_by_key = {k: p.kind for k, p in all_params.items()}
         out = {}
         for k, v in result.items():
             if k in kinds_by_key and (clean := coerce(v, kinds_by_key[k])) is not None:

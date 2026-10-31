@@ -268,3 +268,9 @@ TEXT = {
         "r.small": "Small scale and not in a sensitive area.",
     },
 }
+
+
+from .i18n_ui import UI_TEXT  # noqa: E402
+
+for _lang, _texts in UI_TEXT.items():
+    TEXT[_lang].update(_texts)

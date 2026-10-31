@@ -10,3 +10,4 @@ python-dotenv>=1.0
 google-genai>=1.0
 # Pengujian
 pytest>=8.0
+openpyxl>=3.1
