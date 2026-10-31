@@ -1,0 +1,12 @@
+streamlit>=1.36
+streamlit-folium>=0.20
+folium>=0.17
+shapely>=2.0
+pyproj>=3.6
+pandas>=2.0
+requests>=2.31
+python-dotenv>=1.0
+# Hanya jika LLM_BACKEND=google
+google-genai>=1.0
+# Pengujian
+pytest>=8.0
